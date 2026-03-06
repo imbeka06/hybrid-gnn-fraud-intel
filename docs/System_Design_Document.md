@@ -37,3 +37,47 @@
 * [cite_start]**ML Classifier Module**: An XGBoost (gradient-boosted tree) tabular classifier trained on engineered features (e.g., transaction velocity)[cite: 246]. [cite_start]It combines its outputs with the deep graph embeddings to compute the final fraud risk score[cite: 247].
 * [cite_start]**API Backend**: Built with FastAPI to handle the core logic, API services, and real-time model inference[cite: 250].
 * [cite_start]**Frontend Dashboard**: A user interface developed using React and Tailwind CSS to display the alert manager, visualize fraud rings, and present actionable insights to analysts[cite: 250].
+
+
+
+# Guidelines for Hybrid GNN Fraud Intelligence System
+
+## Project Overview
+This is a real-time fraud detection system for mobile money ecosystems using a hybrid Graph Neural Network (GNN) + XGBoost approach. The system processes streaming transaction data to detect fraud rings and synthetic identities.
+
+## Architecture Overview
+- **Data Flow**: Kafka → Graph Construction (Neo4j) → Hybrid ML Model → FastAPI Backend → React Frontend
+- **Key Components**:
+  - `streaming/`: Kafka producer/consumer for transaction data
+  - `ml_pipeline/models/`: GNN embeddings (PyTorch Geometric) + XGBoost classifier
+  - `backend/`: FastAPI services for inference and API endpoints
+  - `frontend/`: React dashboard with Tailwind CSS
+  - `data/`: Raw/processed data storage
+  - `notebooks/`: Jupyter exploration and prototyping
+
+## Development Workflows
+- **Environment Setup**: Use `docker-compose.yml` for full-stack deployment (includes Kafka, Neo4j, backend, frontend)
+- **ML Training**: Run notebooks in `notebooks/` for data exploration, then `ml_pipeline/training/train_hybrid.py` for model training
+- **Data Processing**: Use `ml_pipeline/data_gen/generate_data.py` for synthetic data, store in `data/processed/`
+- **Graph Operations**: Neo4j for dynamic graph storage; use Cypher queries for graph analytics
+- **Model Inference**: Deploy via FastAPI in `backend/`, load saved weights from `ml_pipeline/saved_weights/`
+
+## Coding Patterns
+- **ML Code**: Use PyTorch Geometric for GNN layers, Scikit-Learn for XGBoost; include temporal features for burst detection
+- **Backend**: FastAPI with async endpoints; structure as `backend/api/`, `backend/core/`, `backend/services/`
+- **Frontend**: React components in `frontend/src/components/`, pages in `frontend/src/pages/`
+- **Streaming**: Kafka topics for transactions; producer in `streaming/transaction_producer.py`, consumer in `streaming/graph_consumer.py`
+- **Configuration**: Environment variables for Kafka brokers, Neo4j credentials, model paths
+
+## Key Files to Reference
+- `docs/System_Design_Document.md`: Complete architecture and requirements
+- `docker-compose.yml`: Service definitions and networking
+- `ml_pipeline/models/gnn_embeddings.py`: GNN implementation patterns
+- `backend/main.py`: API entry point
+- `frontend/src/App.js`: Frontend structure
+
+## Best Practices
+- Store graph data in Neo4j with nodes for entities (users, agents, devices) and edges for transactions
+- Use AUROC/F1-score for model evaluation; minimize temporal latency for real-time detection
+- Implement explainability using GNNExplainer for analyst feedback
+- Follow microservices boundaries: streaming, ML, backend, frontend as separate deployables
