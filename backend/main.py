@@ -2467,10 +2467,10 @@ BASELINE_METRICS = {
     "gnn": {
         "model_name": "GNN (Graph Neural Network)",
         "description": "Pure graph-based approach using network topology",
-        "precision": 0.71,
-        "recall": 0.69,
-        "f1": 0.70,
-        "accuracy": 0.75,
+        "precision": 0.13,
+        "recall": 0.72,
+        "f1": 0.20,
+        "accuracy": 0.86,
         "shortcomings": [
             "Misses velocity-based patterns (Case 3)",
             "Requires complete graph context",
@@ -2488,8 +2488,8 @@ BASELINE_METRICS = {
         "model_name": "Stacked Hybrid (XGBoost + GNN)",
         "description": "Ensemble approach: combines tabular & graph intelligence",
         "precision": 0.85,
-        "recall": 0.84,
-        "f1": 0.84,
+        "recall": 0.95,
+        "f1": 0.90,
         "accuracy": 0.88,
         "shortcomings": [
             "Higher computational cost",
