@@ -6,7 +6,7 @@ export default function Layout({ children }) {
   const location = useLocation();
 
   const menuItems = [
-    { name: 'Home', path: '/', icon: LayoutDashboard },
+    { name: 'Home', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Transactions', path: '/transactions', icon: Receipt },
     { name: 'Fraud Network', path: '/network', icon: Network },
     { name: 'Alerts', path: '/alerts', icon: Bell },
