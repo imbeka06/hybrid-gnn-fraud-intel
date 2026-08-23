@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import pandas as pd
@@ -90,6 +91,17 @@ for epoch in range(1, 101):
     loss = criterion(out, train_labels)
     loss.backward()
     optimizer.step()
+
+os.makedirs('models/saved', exist_ok=True)
+torch.save(
+    {
+        'state_dict': model.state_dict(),
+        'embedding_dim': embedding_dim,
+        'metadata': data.metadata(),
+    },
+    'models/saved/gnn_edge_classifier.pt'
+)
+print("Saved checkpoint: models/saved/gnn_edge_classifier.pt")
 
 # 6. Evaluate on Unseen Data (The 20% Test Set)
 print("\nEvaluating GNN on unseen test edges...")

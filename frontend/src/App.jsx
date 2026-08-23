@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AlertsProvider } from './context/AlertsContext';
+import { SampleDataProvider } from './context/SampleDataContext';
 import Layout from './components/Layout';
 import Home from './pages/Home'; // t
 import Transactions from './pages/Transaction';
@@ -6,6 +8,10 @@ import FraudNetwork from './pages/FraudNetwork';
 import Alerts from './pages/Alerts';
 import Models from './pages/Models';
 import AIBot from './pages/AIBot';
+import AIAnalyst from './pages/AIAnalyst';
+import WatchAndBlock from './pages/WatchAndBlock';
+import USSDSimulator from './pages/USSDSimulator';
+import StandaloneMobile from './pages/StandaloneMobile';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import LandingPage from './pages/LandingPage';

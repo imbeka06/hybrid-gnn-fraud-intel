@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import axios from 'axios';
+import API_BASE from '../lib/api';
 import { Network, MousePointer2, ShieldAlert, Activity, AlertCircle } from 'lucide-react';
 
 export default function FraudNetwork() {
@@ -46,7 +47,7 @@ export default function FraudNetwork() {
   // Fetch Live Neo4j Data and set up pulse animations
   useEffect(() => {
     setLoadingLive(true);
-    axios.get('http://127.0.0.1:8000/live-graph')
+    axios.get(`${API_BASE}/live-graph`)
       .then(res => {
         const data = res.data;
         // Add animation property to edges

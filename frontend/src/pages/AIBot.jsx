@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import API_BASE from '../lib/api';
 import { MessageCircle, BarChart3, Zap, HelpCircle, BookOpen } from 'lucide-react';
 
 const AI_EXPLAIN_CACHE_KEY = 'aiBot:modelExplanations';
@@ -28,6 +29,7 @@ export default function AIBot() {
   const performanceOnCases = explanation?.performance_on_cases || { caught: 0, missed: 0 };
   const modelAgreement = txExplanation?.model_agreement || {};
   const riskFactors = txExplanation?.risk_factors || [];
+  const featureImportance = txExplanation?.feature_importance || [];
 
   // Fetch model explanation
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function AIBot() {
       setLoading(true);
     }
 
-    axios.get(`http://127.0.0.1:8000/ai-explain-model/${selectedModel}`)
+    axios.get(`${API_BASE}/ai-explain-model/${selectedModel}`)
       .then(res => {
         if (requestId !== requestIdRef.current) return;
         setExplanation(res.data);
@@ -65,7 +67,7 @@ export default function AIBot() {
     modelOptions
       .filter((model) => !cached[model])
       .forEach((model) => {
-        axios.get(`http://127.0.0.1:8000/ai-explain-model/${model}`)
+        axios.get(`${API_BASE}/ai-explain-model/${model}`)
           .then((res) => {
             const nextCache = {
               ...readCache(),
@@ -84,7 +86,10 @@ export default function AIBot() {
     if (!txId) return;
     setTxLoading(true);
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/ai-explain-transaction/${txId}?model=${selectedModel}`);
+      const res = await axios.post(`${API_BASE}/ai/analyst/explain`, {
+        transaction_id: txId,
+        model: selectedModel,
+      });
       setTxExplanation(res.data);
     } catch (err) {
       console.error('Error:', err);
@@ -280,6 +285,20 @@ export default function AIBot() {
                 ))}
               </ul>
             </div>
+
+            {featureImportance.length > 0 && (
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                <p className="text-sm font-semibold text-gray-900 mb-2">Top Model Signals</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {featureImportance.slice(0, 6).map((item, idx) => (
+                    <div key={idx} className="bg-white rounded border border-slate-200 px-3 py-2 text-sm">
+                      <span className="font-medium text-gray-800">{item.feature}</span>
+                      <span className="text-gray-600 ml-2">{(Number(item.importance || 0) * 100).toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
               <p className="text-sm font-semibold text-gray-900 mb-2">Action Recommended</p>

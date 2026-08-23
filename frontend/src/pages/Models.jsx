@@ -16,7 +16,7 @@ export default function Models() {
           Model Comparison & Analysis
         </h1>
         <p className="text-gray-600 mt-2">
-          Compare XGBoost, GNN, and Stacked Hybrid models. Test with 5 fraud scenarios and run live evaluations.
+          Review static baseline training metrics at the top, then run live fraud test-case inference in the sampler below.
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export default function Models() {
                 Model Comparison Tool
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Select a model to see detailed metrics, cases caught/missed, and specific strengths/shortcomings
+                Select a model to view its historical baseline training performance and known strengths or shortcomings
               </p>
             </div>
             <div className="p-6">
@@ -45,7 +45,7 @@ export default function Models() {
                 Fraud Test Cases
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Test different models against 5 standardized fraud scenarios to understand trade-offs
+                Select a model and a specific case, then run explicit live inference to see whether the engine catches or misses it
               </p>
             </div>
             <div className="p-6">

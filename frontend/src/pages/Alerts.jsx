@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useAlerts } from '../context/AlertsContext';
 import axios from 'axios';
+import API_BASE from '../lib/api';
 import { ShieldAlert, CheckCircle, XCircle, Clock, Search, ChevronRight } from 'lucide-react';
 
 export default function Alerts() {
+  const { liveAlerts } = useAlerts();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState(null);
-
+ 
   // Fetch the flagged transactions from our SQLite database
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/dashboard-stats');
+        const res = await axios.get(`${API_BASE}/dashboard-stats`);
         setAlerts(res.data.alerts);
         if (res.data.alerts.length > 0) {
           setSelectedAlert(res.data.alerts[0]);
@@ -25,11 +28,25 @@ export default function Alerts() {
     fetchAlerts();
   }, []);
 
+//Merge incoming SSE alerts from context with the initial fetch, ensuring no duplicates and always showing the latest on top
+useEffect(() => {
+  if (liveAlerts.length === 0) return;
+  const newest = liveAlerts[0]; // Layout prepends, so index 0 is always the latest
+
+  setAlerts((prev) => {
+    // Guard against duplicates
+    if (prev.find((a) => a.id === newest.id)) return prev;
+    return [newest, ...prev];
+  });
+
+  setSelectedAlert(newest); // Auto-open the new alert in the right panel
+}, [liveAlerts]);
+
   // Simulate an analyst reviewing and resolving the ticket
  const handleResolve = async (id, action) => {
     try {
       // Tell the backend to update the SQLite database
-      await axios.post(`http://127.0.0.1:8000/resolve-alert/${id}?action=${action}`);
+      await axios.post(`${API_BASE}/resolve-alert/${id}?action=${action}`);
       
       // Now remove it from the UI list
       const updatedAlerts = alerts.filter(a => a.id !== id);

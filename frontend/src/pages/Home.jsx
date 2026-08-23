@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, AlertTriangle, TrendingUp, Clock, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import API_BASE from '../lib/api';
+import { Activity, AlertTriangle, TrendingUp, Clock, Eye, ShieldX } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Home() {
   const [stats, setStats] = useState({
     kpis: { total: 0, fraud: 0, rate: 0 },
     pie: [],
-    alerts: []
+    alerts: [],
+    watchlist: [],
+    blocklist: [],
   });
 
   // Fetch real data from SQLite backend on load
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/dashboard-stats');
+        const res = await axios.get(`${API_BASE}/dashboard-stats`);
         setStats(res.data);
       } catch (err) {
         console.error("Failed to fetch SQLite stats:", err);
@@ -46,7 +49,7 @@ export default function Home() {
         <p className="text-gray-500">Live Database Metrics (Powered by SQLite)</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex justify-between items-start">
             <div>
@@ -87,6 +90,28 @@ export default function Home() {
             </div>
             <div className="p-2 bg-purple-50 rounded-lg text-purple-500"><Clock size={20} /></div>
           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-sm">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Watchlist Accounts</p>
+              <h3 className="text-3xl font-bold text-gray-900">{stats.kpis.watchlist ?? 0}</h3>
+            </div>
+            <div className="p-2 bg-amber-50 rounded-lg text-amber-500"><Eye size={20} /></div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-amber-600 font-medium">Under active review</div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-red-200 shadow-sm">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">Blocked Accounts</p>
+              <h3 className="text-3xl font-bold text-gray-900">{stats.kpis.blocklist ?? 0}</h3>
+            </div>
+            <div className="p-2 bg-red-50 rounded-lg text-red-500"><ShieldX size={20} /></div>
+          </div>
+          <div className="mt-4 flex items-center text-sm text-red-600 font-medium">Hard-stopped by fraud engine</div>
         </div>
       </div>
 
@@ -196,6 +221,78 @@ export default function Home() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-amber-100 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-gray-800">Watchlist Monitor</h3>
+              <p className="text-xs text-gray-500 mt-1">Accounts linked to suspicious cashout chains and kept under review.</p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              {stats.kpis.watchlist ?? 0} tracked
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-amber-50 text-gray-500 uppercase text-xs font-semibold">
+                <tr>
+                  <th className="px-6 py-4">Entity</th>
+                  <th className="px-6 py-4">Linked From</th>
+                  <th className="px-6 py-4">Reason</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {stats.watchlist.map((entry, index) => (
+                  <tr key={`${entry.entity_id}-${index}`} className="hover:bg-amber-50/40 transition-colors">
+                    <td className="px-6 py-4 font-mono font-medium text-gray-900">{entry.entity_id}</td>
+                    <td className="px-6 py-4 font-mono text-amber-700">{entry.source_entity || '—'}</td>
+                    <td className="px-6 py-4 text-xs text-gray-600">{entry.reason}</td>
+                  </tr>
+                ))}
+                {stats.watchlist.length === 0 && (
+                  <tr><td colSpan="3" className="text-center py-8 text-gray-400">No watchlisted accounts yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-red-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-red-100 flex justify-between items-center">
+            <div>
+              <h3 className="font-bold text-gray-800">Blocklist Monitor</h3>
+              <p className="text-xs text-gray-500 mt-1">Entities hard-blocked from transacting by Layer 0 or cashout rules.</p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+              {stats.kpis.blocklist ?? 0} blocked
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-red-50 text-gray-500 uppercase text-xs font-semibold">
+                <tr>
+                  <th className="px-6 py-4">Entity</th>
+                  <th className="px-6 py-4">Added On</th>
+                  <th className="px-6 py-4">Reason</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {stats.blocklist.map((entry, index) => (
+                  <tr key={`${entry.entity_id}-${index}`} className="hover:bg-red-50/40 transition-colors">
+                    <td className="px-6 py-4 font-mono font-medium text-gray-900">{entry.entity_id}</td>
+                    <td className="px-6 py-4 text-xs text-gray-500">{entry.added_on || '—'}</td>
+                    <td className="px-6 py-4 text-xs text-gray-600">{entry.reason}</td>
+                  </tr>
+                ))}
+                {stats.blocklist.length === 0 && (
+                  <tr><td colSpan="3" className="text-center py-8 text-gray-400">No blocked accounts yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

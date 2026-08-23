@@ -67,4 +67,6 @@ xxhash==3.6.0
 yarl==1.23.0
 kafka-python==2.0.2
 reportlab==4.0.9
+PyPDF2==3.0.1
+python-dotenv==1.0.1
 python-docx==0.8.11

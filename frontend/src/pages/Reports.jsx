@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Download, FileText, BarChart2, Filter, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import API_BASE from '../lib/api';
 
 export default function Reports() {
   const [stats, setStats] = useState({ kpis: {}, pie: {}, alerts: [] });
@@ -11,7 +12,7 @@ export default function Reports() {
 
   useEffect(() => {
     // Fetch real dashboard stats from backend
-    axios.get('http://127.0.0.1:8000/dashboard-stats')
+    axios.get(`${API_BASE}/dashboard-stats`)
       .then(res => {
         setStats(res.data);
         setLoading(false);
@@ -60,7 +61,7 @@ export default function Reports() {
     setExporting(true);
     setExportError(null);
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/export-report?report_id=${id}&format=${format}`, {
+      const response = await axios.get(`${API_BASE}/export-report?report_id=${id}&format=${format}`, {
         responseType: format === 'pdf' || format === 'csv' ? 'blob' : 'json',
       });
 

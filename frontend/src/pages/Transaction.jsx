@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import axios from 'axios';
+import API_BASE from '../lib/api';
 import { ShieldAlert, ShieldCheck, Activity, Search, Upload, BarChart3, Zap, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { useSampleData } from '../context/SampleDataContext';
 
 export default function Transactions() {
+  const { setLoadedSample } = useSampleData();
+
   // State to hold the form data
   const [formData, setFormData] = useState({
     transaction_id: 'TXN_' + Math.floor(Math.random() * 1000000),
@@ -14,11 +18,13 @@ export default function Transactions() {
   });
 
   // File upload state
+  const [selectedUploadFile, setSelectedUploadFile] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [extractedTransactions, setExtractedTransactions] = useState([]);
   const [selectedUploadedTx, setSelectedUploadedTx] = useState(null);
   const [uploadedTxComparison, setUploadedTxComparison] = useState(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [sampleLoading, setSampleLoading] = useState(false);
 
   // State to hold the predictions
   const [prediction, setPrediction] = useState(null);
@@ -49,7 +55,10 @@ export default function Transactions() {
     let message = 'An error occurred';
     let details = null;
 
-    if (err.response) {
+    if (err.code === 'ECONNABORTED') {
+      message = 'Request timeout. Backend server may be slow or unresponsive.';
+      details = 'Try again or check backend logs';
+    } else if (err.response) {
       // API returned an error response
       const status = err.response.status;
       const data = err.response.data;
@@ -63,17 +72,27 @@ export default function Transactions() {
       } else if (status === 404) {
         message = 'API endpoint not found. Backend may not be running.';
       } else {
-        message = `Server error: ${status}`;
-        details = data.detail || data.message || JSON.stringify(data);
+        const detail = data.detail;
+        if (typeof detail === 'object' && detail !== null && !Array.isArray(detail)) {
+          message = typeof detail.message === 'string' ? detail.message : `Server error: ${status}`;
+          if (Array.isArray(detail.missing_columns) && detail.missing_columns.length > 0) {
+            details = `Missing columns: ${detail.missing_columns.join(', ')}`;
+            if (Array.isArray(detail.received_columns) && detail.received_columns.length > 0) {
+              details += `. Received: ${detail.received_columns.join(', ')}`;
+            }
+          } else {
+            details = JSON.stringify(detail);
+          }
+        } else {
+          message = `Server error: ${status}`;
+          details = typeof detail === 'string' ? detail : (data.message || JSON.stringify(data));
+        }
       }
     } else if (err.request && !err.response) {
       // Request was made but no response received
       message = 'Cannot connect to backend server';
-      details = 'Is FastAPI running on http://127.0.0.1:8000?';
+      details = `Is FastAPI running on ${API_BASE}?`;
       setApiHealthy(false);
-    } else if (err.code === 'ECONNABORTED') {
-      message = 'Request timeout. Backend server may be slow or unresponsive.';
-      details = 'Try again or check backend logs';
     } else if (err.message) {
       message = err.message;
     }
@@ -101,7 +120,7 @@ export default function Transactions() {
     }
   };
 
-  // Handle file upload with improved error handling
+  // Select file locally first, then load it explicitly with "Load Sample Transaction".
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -124,40 +143,54 @@ export default function Transactions() {
       return;
     }
 
+    setSelectedUploadFile(file);
+    setUploadedFile(null);
+    setExtractedTransactions([]);
+    setSelectedUploadedTx(null);
+    setUploadedTxComparison(null);
+    setApiHealthy(true);
+  };
+
+  const handleLoadSampleTransaction = async () => {
+    if (!selectedUploadFile) {
+      setError('Please choose a CSV, PDF, or Word file first.');
+      return;
+    }
+
     const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
+    formDataUpload.append('file', selectedUploadFile);
 
     try {
-      setLoading(true);
+      setSampleLoading(true);
       setError(null);
       setErrorDetails(null);
-      
-      const response = await axios.post('http://127.0.0.1:8000/upload-transaction-file', formDataUpload, {
+
+      const response = await axios.post(`${API_BASE}/api/samples/load`, formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 30000 // 30 second timeout
+        timeout: 120000
       });
-      
+
       if (!response.data.transactions || response.data.transactions.length === 0) {
         setError('No transactions found in file.');
         setErrorDetails('Please ensure the file contains valid transaction data.');
         return;
       }
-      
-      setUploadedFile(response.data?.dataset?.source_name || file.name);
+
+      const sampleMeta = response.data.sample_meta || null;
+      setUploadedFile(sampleMeta?.source_name || selectedUploadFile.name);
       setExtractedTransactions(response.data.transactions || []);
       setSelectedUploadedTx((response.data.transactions || [])[0] || null);
-      if (response.data?.dataset) {
-        localStorage.setItem('activeDatasetMeta', JSON.stringify(response.data.dataset));
-        window.dispatchEvent(new Event('dataset-updated'));
+      if (sampleMeta) {
+        setLoadedSample(sampleMeta);
       }
       setApiHealthy(true);
     } catch (err) {
       const { message, details } = parseErrorMessage(err);
       setError(message);
       setErrorDetails(details);
-      console.error('File upload error:', err);
+      console.error('Sample load error:', err);
     } finally {
-      setLoading(false);
+      setSampleLoading(false);
     }
   };
 
@@ -188,7 +221,7 @@ export default function Transactions() {
       };
 
       // Get stacked hybrid prediction
-      const hybridResponse = await axios.post('http://127.0.0.1:8000/predict', payload, {
+      const hybridResponse = await axios.post(`${API_BASE}/predict`, payload, {
         timeout: 30000
       });
       
@@ -201,7 +234,7 @@ export default function Transactions() {
 
       // Get model comparison
       try {
-        const comparisonResponse = await axios.post('http://127.0.0.1:8000/run-transaction-comparison', payload, {
+        const comparisonResponse = await axios.post(`${API_BASE}/run-transaction-comparison`, payload, {
           timeout: 30000
         });
         if (comparisonResponse.data) {
@@ -247,7 +280,7 @@ export default function Transactions() {
         receiver_id: selectedUploadedTx.receiver_id || 'UNKNOWN'
       };
 
-      const comparisonResponse = await axios.post('http://127.0.0.1:8000/run-transaction-comparison', txData, {
+      const comparisonResponse = await axios.post(`${API_BASE}/run-transaction-comparison`, txData, {
         timeout: 30000
       });
       
@@ -357,7 +390,7 @@ export default function Transactions() {
           Extract Transaction Data from File
         </h2>
         
-        {loading && (
+        {sampleLoading && (
           <div className="mb-4 flex items-center gap-2 text-blue-600">
             <Activity size={16} className="animate-spin" />
             <p className="text-sm font-medium">Processing file...</p>
@@ -371,14 +404,28 @@ export default function Transactions() {
             onChange={handleFileUpload}
             className="hidden"
             id="file-upload"
-            disabled={loading}
+            disabled={sampleLoading}
           />
-          <label htmlFor="file-upload" className={`cursor-pointer block ${loading ? 'opacity-50' : ''}`}>
+          <label htmlFor="file-upload" className={`cursor-pointer block ${sampleLoading ? 'opacity-50' : ''}`}>
             <Upload size={32} className="mx-auto mb-3 text-gray-400" />
             <p className="text-gray-700 font-medium">Upload CSV, PDF, or Word doc</p>
             <p className="text-sm text-gray-500 mt-1">Click to browse or drag and drop (Max 10MB)</p>
           </label>
         </div>
+
+        <button
+          onClick={handleLoadSampleTransaction}
+          disabled={!selectedUploadFile || sampleLoading}
+          className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+        >
+          {sampleLoading ? 'Loading Sample Transaction...' : 'Load Sample Transaction'}
+        </button>
+
+        {selectedUploadFile && !uploadedFile && (
+          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+            File selected: {selectedUploadFile.name}. Click "Load Sample Transaction" to parse and stage it for Zone 2 testing.
+          </div>
+        )}
 
         {uploadedFile && (
           <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
@@ -458,9 +505,9 @@ export default function Transactions() {
                   {/* Model Scores */}
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { name: 'XGBoost', score: uploadedTxComparison.xgboost_score },
-                      { name: 'GNN', score: uploadedTxComparison.gnn_score },
-                      { name: 'Hybrid', score: uploadedTxComparison.hybrid_score }
+                      { name: 'XGBoost', score: uploadedTxComparison.models?.xgboost?.score },
+                      { name: 'GNN', score: uploadedTxComparison.models?.gnn?.score },
+                      { name: 'Hybrid', score: uploadedTxComparison.models?.stacked_hybrid?.score }
                     ].map(m => (
                       <div key={m.name} className={`p-4 rounded-lg border-2 ${
                         m.score > 0.7 ? 'border-red-200 bg-red-50' :
@@ -492,7 +539,7 @@ export default function Transactions() {
                       {uploadedTxComparison.consensus}
                     </p>
                     <p className="text-xs text-gray-600 mt-1">
-                      {uploadedTxComparison.models_flagged}/3 models flagged this
+                      {uploadedTxComparison.models_flagged ?? '?'}/3 models flagged this
                     </p>
                   </div>
                 </div>

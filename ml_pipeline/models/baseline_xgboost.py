@@ -1,3 +1,5 @@
+import os
+import pickle
 import pandas as pd
 import numpy as np
 from xgboost import XGBClassifier
@@ -40,6 +42,11 @@ baseline_model = XGBClassifier(
     n_estimators=100, max_depth=6, learning_rate=0.1, scale_pos_weight=pos_weight, random_state=42
 )
 baseline_model.fit(X_train, y_train)
+
+os.makedirs('models/saved', exist_ok=True)
+with open('models/saved/baseline_xgboost.pkl', 'wb') as artifact_file:
+    pickle.dump(baseline_model, artifact_file)
+print("Saved model: models/saved/baseline_xgboost.pkl")
 
 # 5. Segmented Evaluation (The Proof for your Thesis)
 print("\n XGBoost Blind Spot Analysis ")

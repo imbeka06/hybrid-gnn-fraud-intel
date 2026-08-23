@@ -41,10 +41,8 @@ data/external/
 *.xlsx
 
 # Ignore model artifacts and weights
-models/saved/
-*.pt
+# models/saved/ is intentionally tracked — trained models are small (<2MB) and needed by Railway
 *.pth
-*.pkl
 
 # Ignore model checkpoints and logs
 logs/
