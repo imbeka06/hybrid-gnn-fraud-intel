@@ -20,20 +20,24 @@ import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/dashboard" element={<Layout><Home /></Layout>} />
-          <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
-          <Route path="/network" element={<Layout><FraudNetwork /></Layout>} />
-          <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
-          <Route path="/models" element={<Layout><Models /></Layout>} />
-          <Route path="/ai-bot" element={<Layout><AIBot /></Layout>} />
-          <Route path="/reports" element={<Layout><Reports /></Layout>} />
-          <Route path="/settings" element={<Layout><Settings /></Layout>} />
-          <Route path="*" element={<div>Page under construction</div>} />
-      </Routes>
-    </Router>
+    <AlertsProvider>
+      <SampleDataProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/dashboard" element={<Layout><Home /></Layout>} />
+            <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
+            <Route path="/network" element={<Layout><FraudNetwork /></Layout>} />
+            <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+            <Route path="/models" element={<Layout><Models /></Layout>} />
+            <Route path="/ai-bot" element={<Layout><AIBot /></Layout>} />
+            <Route path="/reports" element={<Layout><Reports /></Layout>} />
+            <Route path="/settings" element={<Layout><Settings /></Layout>} />
+            <Route path="*" element={<div>Page under construction</div>} />
+          </Routes>
+        </Router>
+      </SampleDataProvider>
+    </AlertsProvider>
   );
 }
 
