@@ -14,40 +14,26 @@ import USSDSimulator from './pages/USSDSimulator';
 import StandaloneMobile from './pages/StandaloneMobile';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import LandingPage from './pages/LandingPage';
 
 
 
 function App() {
   return (
-    <AlertsProvider>
-      <SampleDataProvider>
-        <Router>
-          <Routes>
-            {/* ── Chromeless route — no sidebar, no layout ── */}
-            <Route path="/mobile" element={<StandaloneMobile />} />
-
-            {/* ── Analyst dashboard — wrapped in Layout ── */}
-            <Route path="/*" element={
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/network" element={<FraudNetwork />} />
-                  <Route path="/alerts" element={<Alerts />} />
-                  <Route path="/models" element={<Models />} />
-                  <Route path="/ai-bot" element={<AIBot />} />
-                  <Route path="/ai-analyst" element={<AIAnalyst />} />
-                  <Route path="/watch-block" element={<WatchAndBlock />} />
-                  <Route path="/ussd-sim" element={<USSDSimulator />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Routes>
-              </Layout>
-            } />
-          </Routes>
-        </Router>
-      </SampleDataProvider>
-    </AlertsProvider>
+    <Router>
+      <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/dashboard" element={<Layout><Home /></Layout>} />
+          <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
+          <Route path="/network" element={<Layout><FraudNetwork /></Layout>} />
+          <Route path="/alerts" element={<Layout><Alerts /></Layout>} />
+          <Route path="/models" element={<Layout><Models /></Layout>} />
+          <Route path="/ai-bot" element={<Layout><AIBot /></Layout>} />
+          <Route path="/reports" element={<Layout><Reports /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="*" element={<div>Page under construction</div>} />
+      </Routes>
+    </Router>
   );
 }
 
